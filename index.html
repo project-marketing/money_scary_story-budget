@@ -236,7 +236,7 @@
     var ov = weekOverridesByMonth[keyOf(y,m)] || {};
     if (ov.hasOwnProperty(wi)) return ov[wi];
     var dim = daysInMonth(y, m);
-    return dim ? Math.round(freeBudget() * realDaysInWeek(weeks[wi]) / dim) : 0;
+    return dim ? roundTo10(freeBudget() * realDaysInWeek(weeks[wi]) / dim) : 0;
   }
   function getWeekBudget(wi){ return getWeekBudgetFor(viewYear, viewMonth, wi, weeksArr); }
 
@@ -308,6 +308,7 @@
 
   function digitsOf(str){ return (str || '').replace(/[^0-9]/g, ''); }
   function formatCurrency(n){ return '₩' + (n || 0).toLocaleString('ko-KR'); }
+  function roundTo10(n){ return Math.floor(n/10)*10; }
   function wireCurrencyInput(inputEl, onChange){
     inputEl.addEventListener('input', function(){
       var raw = digitsOf(this.value);
@@ -354,7 +355,7 @@
     weekInputRefs.forEach(function(input, wi){ if(input.dataset.userEdited==='1'){ overriddenSum+=getCurrencyValue(input); } else { freeWeeks.push(wi); } });
     var remain=Math.max(free-overriddenSum,0);
     var daySum=freeWeeks.reduce(function(s,wi){ return s+realDaysInWeek(weeksArr[wi]); },0);
-    freeWeeks.forEach(function(wi){ setCurrencyValue(weekInputRefs[wi], daySum>0?Math.round(remain*realDaysInWeek(weeksArr[wi])/daySum):0); });
+    freeWeeks.forEach(function(wi){ setCurrencyValue(weekInputRefs[wi], daySum>0?roundTo10(remain*realDaysInWeek(weeksArr[wi])/daySum):0); });
   }
   function recomputeMonthFromWeeks(){
     var weeksSum = weekInputRefs.reduce(function(s, inp){ return s + getCurrencyValue(inp); }, 0);
@@ -369,7 +370,7 @@
     weekBudgetBroadcastDone = false;
     weekInputRefs.forEach(function(input, wi){
       input.dataset.userEdited='0';
-      setCurrencyValue(input, daySum>0?Math.round(free*realDaysInWeek(weeksArr[wi])/daySum):0);
+      setCurrencyValue(input, daySum>0?roundTo10(free*realDaysInWeek(weeksArr[wi])/daySum):0);
     });
   }
 
@@ -606,7 +607,7 @@
     var box=document.createElement('div'); box.style.cssText='background:var(--surface-1); border-radius:10px; padding:10px 12px;';
     if (isNow){
       var elapsed=NOW.d, spentToDate=monthSpentRange(1, NOW.d);
-      var dailyAvg=elapsed>0?spentToDate/elapsed:0; var projected=Math.round(dailyAvg*dim); var projRemain=free-projected;
+      var dailyAvg=elapsed>0?spentToDate/elapsed:0; var projected=roundTo10(dailyAvg*dim); var projRemain=free-projected;
       var r1=document.createElement('div'); r1.style.cssText='display:flex; justify-content:space-between; align-items:baseline; margin-bottom:6px;';
       var l1=document.createElement('span'); l1.textContent='이 페이스면 월말에'; l1.style.cssText='font-size:12px; color:var(--text-secondary);';
       var v1=document.createElement('span');
@@ -652,7 +653,7 @@
       if (!monthActive) return 0;
       var base=getWeekBudget(wi);
       if (!isNowMonth || statuses[wi]==='past' || remainAhead===0) return base;
-      return base + Math.round(carry/remainAhead);
+      return base + roundTo10(carry/remainAhead);
     }
     weeksEl.innerHTML='';
     weeksArr.forEach(function(week, wi){
