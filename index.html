@@ -341,7 +341,7 @@
   function setAddSectionVisible(v){ document.getElementById('addSection').style.display = v ? 'block' : 'none'; }
 
   var tempMonth=0, tempFixed=[], tempOverrides={};
-  var weekInputRefs=[]; var pendingFixedDelete=null; var weekBudgetBroadcastDone=false;
+  var weekInputRefs=[]; var pendingFixedDelete=null;
 
   function tempFixedTotal(){ return tempFixed.reduce(function(s,f){ return s+f.amount; }, 0); }
   function tempFree(){ return Math.max(tempMonth - tempFixedTotal(), 0); }
@@ -367,7 +367,6 @@
     var free=tempFree();
     var daySum=weeksArr.reduce(function(s,week){ return s+realDaysInWeek(week); },0);
     tempOverrides = {};
-    weekBudgetBroadcastDone = false;
     weekInputRefs.forEach(function(input, wi){
       input.dataset.userEdited='0';
       setCurrencyValue(input, daySum>0?roundTo10(free*realDaysInWeek(weeksArr[wi])/daySum):0);
@@ -412,18 +411,6 @@
       input.dataset.userEdited = tempOverrides.hasOwnProperty(wi)?'1':'0'; input.style.cssText='flex:1; height:32px; font-size:12px;';
       if (tempOverrides.hasOwnProperty(wi)) setCurrencyValue(input, tempOverrides[wi]);
       wireCurrencyInput(input, function(){ input.dataset.userEdited='1'; tempOverrides[wi]=getCurrencyValue(input); recomputeMonthFromWeeks(); });
-      input.addEventListener('blur', function(){
-        if (weekBudgetBroadcastDone) return;
-        var v = getCurrencyValue(input);
-        if (v <= 0) return;
-        weekBudgetBroadcastDone = true;
-        weekInputRefs.forEach(function(inp, wi2){
-          inp.dataset.userEdited = '1';
-          setCurrencyValue(inp, v);
-          tempOverrides[wi2] = v;
-        });
-        recomputeMonthFromWeeks();
-      });
       row.appendChild(label); row.appendChild(input); listEl.appendChild(row); weekInputRefs.push(input);
     });
     recomputeWeekInputs();
@@ -433,7 +420,7 @@
     weeksArr = buildWeeksFor(viewYear, viewMonth);
     tempMonth = monthBudget;
     tempFixed = fixedExpenses.map(function(f){ return {name:f.name, amount:f.amount, day:f.day}; });
-    tempOverrides = {}; pendingFixedDelete = null; weekBudgetBroadcastDone = Object.keys(getOverrides()).length > 0;
+    tempOverrides = {}; pendingFixedDelete = null;
     var ov = getOverrides(); Object.keys(ov).forEach(function(k){ tempOverrides[k] = ov[k]; });
     document.getElementById('weekBudgetLabel').textContent = (viewMonth+1)+'월 주별 예산 (자유 예산 분배)';
     setCurrencyValue(document.getElementById('monthBudgetInput'), tempMonth);
