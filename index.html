@@ -164,7 +164,10 @@
       </div>
     </div>
 
-    <p id="weekBudgetLabel" style="font-size:11px; color:var(--text-secondary); margin:0 0 6px;">주별 예산 (자유 예산 분배)</p>
+    <div style="display:flex; justify-content:space-between; align-items:center; margin:0 0 6px;">
+      <p id="weekBudgetLabel" style="font-size:11px; color:var(--text-secondary); margin:0;">주별 예산 (자유 예산 분배)</p>
+      <span id="applyAllWeeksBtn" style="font-size:11px; color:var(--text-accent); cursor:pointer;">전체 동일하게</span>
+    </div>
     <div id="weekBudgetList" style="margin-bottom:14px;"></div>
 
     <div style="display:flex; gap:8px;">
@@ -442,6 +445,17 @@
   document.getElementById('budgetSaveBtn').addEventListener('click', function(){ closeBudgetModal(true); });
   document.getElementById('budgetModalOverlay').addEventListener('click', function(e){ if (e.target===this){ closeBudgetModal(true); } });
   document.getElementById('addFixedBtn').addEventListener('click', function(){ tempFixed.push({name:'', amount:0, day:1}); pendingFixedDelete=null; renderFixedList(); updateBudgetSummary(); recomputeWeekInputs(); });
+  document.getElementById('applyAllWeeksBtn').addEventListener('click', function(){
+    if (!weekInputRefs.length) return;
+    var v = getCurrencyValue(weekInputRefs[0]);
+    if (v <= 0) return;
+    weekInputRefs.forEach(function(inp, wi){
+      inp.dataset.userEdited = '1';
+      setCurrencyValue(inp, v);
+      tempOverrides[wi] = v;
+    });
+    recomputeMonthFromWeeks();
+  });
   wireCurrencyInput(document.getElementById('monthBudgetInput'), function(){ tempMonth=getCurrencyValue(document.getElementById('monthBudgetInput')); updateBudgetSummary(); distributeMonthToWeeks(); });
   attachStepper(document.getElementById('monthBudgetUp'), document.getElementById('monthBudgetDown'), document.getElementById('monthBudgetInput'), 10000, function(){ tempMonth=getCurrencyValue(document.getElementById('monthBudgetInput')); updateBudgetSummary(); distributeMonthToWeeks(); }, 50000);
 
