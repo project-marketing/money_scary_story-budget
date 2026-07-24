@@ -362,6 +362,16 @@
     setCurrencyValue(document.getElementById('monthBudgetInput'), tempMonth);
     updateBudgetSummary();
   }
+  function distributeMonthToWeeks(){
+    var free=tempFree();
+    var daySum=weeksArr.reduce(function(s,week){ return s+realDaysInWeek(week); },0);
+    tempOverrides = {};
+    weekBudgetBroadcastDone = false;
+    weekInputRefs.forEach(function(input, wi){
+      input.dataset.userEdited='0';
+      setCurrencyValue(input, daySum>0?Math.round(free*realDaysInWeek(weeksArr[wi])/daySum):0);
+    });
+  }
 
   function renderFixedList(){
     var listEl=document.getElementById('fixedList'); listEl.innerHTML='';
@@ -444,8 +454,8 @@
   document.getElementById('budgetSaveBtn').addEventListener('click', function(){ closeBudgetModal(true); });
   document.getElementById('budgetModalOverlay').addEventListener('click', function(e){ if (e.target===this){ closeBudgetModal(true); } });
   document.getElementById('addFixedBtn').addEventListener('click', function(){ tempFixed.push({name:'', amount:0, day:1}); pendingFixedDelete=null; renderFixedList(); updateBudgetSummary(); recomputeWeekInputs(); });
-  wireCurrencyInput(document.getElementById('monthBudgetInput'), function(){ tempMonth=getCurrencyValue(document.getElementById('monthBudgetInput')); updateBudgetSummary(); recomputeWeekInputs(); });
-  attachStepper(document.getElementById('monthBudgetUp'), document.getElementById('monthBudgetDown'), document.getElementById('monthBudgetInput'), 10000, function(){ tempMonth=getCurrencyValue(document.getElementById('monthBudgetInput')); updateBudgetSummary(); recomputeWeekInputs(); }, 50000);
+  wireCurrencyInput(document.getElementById('monthBudgetInput'), function(){ tempMonth=getCurrencyValue(document.getElementById('monthBudgetInput')); updateBudgetSummary(); distributeMonthToWeeks(); });
+  attachStepper(document.getElementById('monthBudgetUp'), document.getElementById('monthBudgetDown'), document.getElementById('monthBudgetInput'), 10000, function(){ tempMonth=getCurrencyValue(document.getElementById('monthBudgetInput')); updateBudgetSummary(); distributeMonthToWeeks(); }, 50000);
 
   function openFixedDetail(d){
     var listEl=document.getElementById('fixedDetailList'); listEl.innerHTML='';
