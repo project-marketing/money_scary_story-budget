@@ -130,8 +130,8 @@
 
 <div id="savedInfoOverlay" class="overlay" style="z-index:56;">
   <div class="sheet" style="max-width:300px;">
-    <p style="font-size:14px; font-weight:500; margin:0 0 8px;">지금까지 모은 돈이란?</p>
-    <p style="font-size:12px; color:var(--text-secondary); line-height:1.6; margin:0 0 12px;">이미 지나간 주에서 <b style="font-weight:600; color:var(--text-primary);">그 주 예산보다 덜 쓰고 남긴 돈</b>을 모두 더한 금액이에요. 진행 중인 이번 주는 아직 포함되지 않아요.<br><br>통장 잔액과는 별개로, 계획보다 아낀 만큼이 차곡차곡 쌓입니다. 통장이 그대로여도 이 숫자가 오르면 잘 하고 있는 거예요.</p>
+    <p style="font-size:14px; font-weight:500; margin:0 0 8px;">이달에 남긴 돈이란?</p>
+    <p style="font-size:12px; color:var(--text-secondary); line-height:1.6; margin:0 0 12px;">이번 달에 이미 지나간 주에서 <b style="font-weight:600; color:var(--text-primary);">그 주 예산보다 덜 쓰고 남긴 돈</b>을 모두 더한 금액이에요. 진행 중인 이번 주와 다른 달은 포함되지 않아요.<br><br>통장 잔액과는 별개로, 계획보다 아낀 만큼이 차곡차곡 쌓입니다. 통장이 그대로여도 이 숫자가 오르면 잘 하고 있는 거예요.</p>
     <button id="savedInfoClose" style="width:100%;">닫기</button>
   </div>
 </div>
@@ -213,7 +213,7 @@
   function daysInMonth(y, m){ return new Date(y, m + 1, 0).getDate(); }
   function firstWeekdayOf(y, m){ return new Date(y, m, 1).getDay(); }
   function getMonthExpenses(){ var k = monthKey(); if (!expensesByMonth[k]) expensesByMonth[k] = {}; return expensesByMonth[k]; }
-  function getOverrides(){ var k = monthKey(); if (!weekOverridesByMonth[k]) weekOverridesByMonth[k] = {}; return weekOverridesByMonth[k]; }
+  function getOverrides(){ return weekOverridesByMonth[monthKey()] || {}; }
 
   function buildWeeksFor(y, m){
     var dim = daysInMonth(y, m), fw = firstWeekdayOf(y, m), cells = [];
@@ -266,20 +266,24 @@
   }
   function weekStatus(week){ return weekStatusFor(viewYear, viewMonth, week); }
 
-  function computeTotalSaved(){
+  function isMonthActive(y, m){
+    if (y === NOW.y && m === NOW.m) return true;
+    var k = keyOf(y, m);
+    var exp = expensesByMonth[k];
+    if (exp && Object.keys(exp).length > 0) return true;
+    if (weekOverridesByMonth.hasOwnProperty(k)) return true;
+    return false;
+  }
+
+  function computeMonthSaved(y, m){
     if (monthBudget <= 0) return 0;
-    var total = 0, keys = {};
-    Object.keys(expensesByMonth).forEach(function(k){ keys[k] = 1; });
-    Object.keys(weekOverridesByMonth).forEach(function(k){ keys[k] = 1; });
-    Object.keys(keys).forEach(function(k){
-      var parts = k.split('-'); var y = parseInt(parts[0],10), m = parseInt(parts[1],10);
-      if (y > NOW.y || (y === NOW.y && m > NOW.m)) return;
-      var weeks = buildWeeksFor(y, m);
-      weeks.forEach(function(week, wi){
-        if (weekStatusFor(y, m, week) === 'past'){
-          total += getWeekBudgetFor(y, m, wi, weeks) - weekSpentFor(y, m, week);
-        }
-      });
+    if (!isMonthActive(y, m)) return 0;
+    var total = 0;
+    var weeks = buildWeeksFor(y, m);
+    weeks.forEach(function(week, wi){
+      if (weekStatusFor(y, m, week) === 'past'){
+        total += getWeekBudgetFor(y, m, wi, weeks) - weekSpentFor(y, m, week);
+      }
     });
     return total;
   }
@@ -586,6 +590,7 @@
     var isNow=(monthKey()===nowKey());
     var isPast=(viewYear<NOW.y)||(viewYear===NOW.y&&viewMonth<NOW.m);
     if (!isNow && !isPast){ card.style.display='none'; return; }
+    if (isPast && !isMonthActive(viewYear, viewMonth)){ card.style.display='none'; return; }
     card.style.display='block';
     var free=freeBudget(), dim=daysInMonth(viewYear, viewMonth);
     var box=document.createElement('div'); box.style.cssText='background:var(--surface-1); border-radius:10px; padding:10px 12px;';
@@ -607,10 +612,10 @@
       else { vp.textContent=formatCurrency(-leftover)+' 초과'; vp.style.cssText='font-size:13px; font-weight:600; color:#9E4A4A;'; }
       rp.appendChild(lp); rp.appendChild(vp); box.appendChild(rp);
     }
-    var saved=Math.max(computeTotalSaved(),0);
+    var saved=Math.max(computeMonthSaved(viewYear, viewMonth),0);
     var r2=document.createElement('div'); r2.style.cssText='display:flex; justify-content:space-between; align-items:baseline;';
     var l2wrap=document.createElement('span'); l2wrap.style.cssText='display:inline-flex; align-items:center; gap:3px;';
-    var l2=document.createElement('span'); l2.textContent='지금까지 모은 돈'; l2.style.cssText='font-size:12px; color:var(--text-secondary);';
+    var l2=document.createElement('span'); l2.textContent='이달에 남긴 돈'; l2.style.cssText='font-size:12px; color:var(--text-secondary);';
     var info=document.createElement('i'); info.className='ti ti-info-circle'; info.setAttribute('aria-label','설명 보기'); info.style.cssText='font-size:14px; color:var(--text-muted); cursor:pointer;';
     info.addEventListener('click', function(){ document.getElementById('savedInfoOverlay').style.display='flex'; });
     l2wrap.appendChild(l2); l2wrap.appendChild(info);
@@ -625,6 +630,7 @@
     renderSummary(); openTipHide=null;
     var statuses = weeksArr.map(weekStatus);
     var isNowMonth = (monthKey()===nowKey());
+    var monthActive = isMonthActive(viewYear, viewMonth);
     var carry=0, remainAhead=0;
     if (isNowMonth){
       statuses.forEach(function(st, wi){
@@ -633,6 +639,7 @@
       });
     }
     function effectiveBudget(wi){
+      if (!monthActive) return 0;
       var base=getWeekBudget(wi);
       if (!isNowMonth || statuses[wi]==='past' || remainAhead===0) return base;
       return base + Math.round(carry/remainAhead);
