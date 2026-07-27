@@ -641,20 +641,10 @@
     document.getElementById('monthTitle').textContent = viewYear + '년 ' + (viewMonth+1) + '월';
     renderSummary(); openTipHide=null;
     var statuses = weeksArr.map(weekStatus);
-    var isNowMonth = (monthKey()===nowKey());
     var monthActive = isMonthActive(viewYear, viewMonth);
-    var carry=0, remainAhead=0;
-    if (isNowMonth){
-      statuses.forEach(function(st, wi){
-        if (st==='past'){ carry += getWeekBudget(wi) - weekSpent(weeksArr[wi]); }
-        if (st==='current' || st==='future'){ remainAhead++; }
-      });
-    }
     function effectiveBudget(wi){
       if (!monthActive) return 0;
-      var base=getWeekBudget(wi);
-      if (!isNowMonth || statuses[wi]==='past' || remainAhead===0) return base;
-      return base + roundTo10(carry/remainAhead);
+      return getWeekBudget(wi);
     }
     weeksEl.innerHTML='';
     weeksArr.forEach(function(week, wi){
